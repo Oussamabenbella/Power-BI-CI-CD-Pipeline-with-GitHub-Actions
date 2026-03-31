@@ -1,0 +1,42 @@
+[
+  {
+    "ID": "DAX_DIVISION_COLUMNS",
+    "Name": "Avoid division (use DIVIDE function instead)",
+    "Category": "DAX Expressions",
+    "Description": "Calculated Columns, Measures or Calculated Tables should not use the division symbol in their expressions (/) unless the denominator is a constant value. Instead, it is advised to always use the DIVIDE(<numerator>,<denominator>) function.",
+    "Severity": 3,
+    "Scope": "Measure, CalculatedColumn, CalculatedTable",
+    "Expression": "Tokenize().Any(\n    Type = DIV and\n    Next.Type <> INTEGER_LITERAL and\n    Next.Type <> REAL_LITERAL\n)",
+    "CompatibilityLevel": 1200
+  },
+  {
+    "ID": "MEASURE_DESCRIPTION_REQUIRED",
+    "Name": "Measures must have descriptions",
+    "Category": "Documentation",
+    "Description": "All measures should have a description for documentation and maintainability purposes.",
+    "Severity": 3,
+    "Scope": "Measure",
+    "Expression": "string.IsNullOrWhiteSpace(Description)",
+    "CompatibilityLevel": 1200
+  },
+  {
+    "ID": "NO_SUMMARIZE_COLUMNS",
+    "Name": "Avoid SUMMARIZECOLUMNS in measures",
+    "Category": "Performance",
+    "Description": "SUMMARIZECOLUMNS should not be used in measures as it can cause performance issues.",
+    "Severity": 2,
+    "Scope": "Measure",
+    "Expression": "Expression.Contains(\"SUMMARIZECOLUMNS\")",
+    "CompatibilityLevel": 1200
+  },
+  {
+    "ID": "FORMAT_STRING_REQUIRED",
+    "Name": "Measures should have format strings",
+    "Category": "Formatting",
+    "Description": "All measures should have an appropriate format string defined.",
+    "Severity": 2,
+    "Scope": "Measure",
+    "Expression": "string.IsNullOrWhiteSpace(FormatString)",
+    "CompatibilityLevel": 1200
+  }
+]

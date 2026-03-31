@@ -1,0 +1,27 @@
+# Power BI files
+*.pbix
+*.pbit
+
+# Tabular Editor
+TabularEditor.exe
+TabularEditor.zip
+*.dll
+*.pdb
+
+# BPA Output
+BPA_output.txt
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

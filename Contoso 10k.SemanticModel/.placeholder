@@ -1,0 +1,29 @@
+# Placeholder for Power BI Project
+
+This folder will contain your Power BI project files when you add them.
+
+## Expected Structure:
+
+```
+Contoso 10k.SemanticModel/
+├── definition/
+│   ├── database.tmdl
+│   ├── model.tmdl
+│   ├── tables/
+│   ├── relationships/
+│   └── ...
+└── .pbi/
+```
+
+## How to Add Your Project:
+
+1. Download the Contoso sample data from:
+   https://github.com/sql-bi/Contoso-Data-Generator-V2-Data/releases/download/ready-to-use-data/pbix-10k.7z
+
+2. Open the .pbix file in Power BI Desktop
+
+3. Save it as a .pbip file in the root of this repository
+
+4. The folder structure will be created automatically
+
+5. Commit and push your changes

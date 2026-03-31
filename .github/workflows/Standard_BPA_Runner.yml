@@ -1,0 +1,34 @@
+name: Standard BPA Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-bpa:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Download Tabular Editor 2.x
+        run: |
+          $url = "https://github.com/TabularEditor/TabularEditor/releases/latest/download/TabularEditor.Portable.zip"
+          $output = "TabularEditor.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath . -Force
+          Write-Host "Tabular Editor downloaded and extracted successfully"
+        shell: pwsh
+      
+      - name: Run BPA with Default Ruleset
+        run: |
+          ./TabularEditor.exe "MonProjet.SemanticModel/definition/database.tmdl" -A "https://raw.githubusercontent.com/microsoft/Analysis-Services/master/BestPracticeRules/BPARules.json" `
+          | Tee-Object -FilePath "./BPA_output.txt"
+        shell: pwsh
+      
+      - name: Upload BPA Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpa-results
+          path: BPA_output.txt
