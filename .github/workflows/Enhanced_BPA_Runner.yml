@@ -1,0 +1,138 @@
+name: Enhanced BPA Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      severity_level:
+        description: 'Minimum severity level to report'
+        required: false
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+      ruleset:
+        description: 'Ruleset to use'
+        required: false
+        default: 'custom'
+        type: choice
+        options:
+          - 'custom'
+          - 'standard'
+          - 'strict'
+
+jobs:
+  run-bpa:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Cache Tabular Editor
+        id: cache-te
+        uses: actions/cache@v3
+        with:
+          path: |
+            TabularEditor.exe
+            *.dll
+          key: tabular-editor-${{ runner.os }}-v2
+      
+      - name: Download Tabular Editor 2.x
+        if: steps.cache-te.outputs.cache-hit != 'true'
+        run: |
+          Write-Host "⬇️ Downloading Tabular Editor..."
+          $url = "https://github.com/TabularEditor/TabularEditor/releases/latest/download/TabularEditor.Portable.zip"
+          $output = "TabularEditor.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath . -Force
+          Write-Host "✅ Tabular Editor downloaded and extracted successfully"
+        shell: pwsh
+      
+      - name: Select Ruleset
+        id: ruleset
+        run: |
+          $ruleset = "${{ github.event.inputs.ruleset }}"
+          if ($ruleset -eq "standard") {
+            $rulesetPath = "https://raw.githubusercontent.com/microsoft/Analysis-Services/master/BestPracticeRules/BPARules.json"
+          } elseif ($ruleset -eq "strict") {
+            $rulesetPath = "./examples/BPA_Strict.json"
+          } else {
+            $rulesetPath = "./BPA_Rule.json"
+          }
+          echo "path=$rulesetPath" >> $env:GITHUB_OUTPUT
+          Write-Host "📋 Using ruleset: $rulesetPath"
+        shell: pwsh
+      
+      - name: Run BPA Analysis
+        id: bpa
+        continue-on-error: true
+        run: |
+          Write-Host "🔍 Running BPA Analysis..."
+          $rulesetPath = "${{ steps.ruleset.outputs.path }}"
+          
+          $output = ./TabularEditor.exe "MonProjet.SemanticModel/definition/database.tmdl" -A "$rulesetPath" 2>&1
+          $output | Tee-Object -FilePath "./BPA_output.txt"
+          
+          $allLines = $output -split "`n"
+          $violations = $allLines | Where-Object { $_ -match "violates rule" }
+          $errors = $allLines | Where-Object { $_ -match "^Error:" }
+          
+          $totalViolations = $violations.Count
+          $errorCount = $errors.Count
+          $warningCount = $totalViolations - $errorCount
+          
+          Write-Host "📊 Analysis Complete:"
+          Write-Host "   Total Violations: $totalViolations"
+          Write-Host "   Errors: $errorCount"
+          Write-Host "   Warnings: $warningCount"
+          
+          echo "total=$totalViolations" >> $env:GITHUB_OUTPUT
+          echo "errors=$errorCount" >> $env:GITHUB_OUTPUT
+          echo "warnings=$warningCount" >> $env:GITHUB_OUTPUT
+          
+          $minSeverity = [int]"${{ github.event.inputs.severity_level }}"
+          if ($minSeverity -eq 3 -and $errorCount -gt 0) {
+            Write-Host "❌ Failing due to Severity 3 violations"
+            exit 1
+          } elseif ($minSeverity -eq 2 -and $warningCount -gt 0) {
+            Write-Host "⚠️ Warnings found but continuing"
+            exit 0
+          } else {
+            Write-Host "✅ Analysis passed"
+            exit 0
+          }
+        shell: pwsh
+      
+      - name: Upload BPA Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bpa-results-enhanced-${{ github.run_number }}
+          path: BPA_output.txt
+          retention-days: 30
+      
+      - name: Create Job Summary
+        if: always()
+        run: |
+          $errors = "${{ steps.bpa.outputs.errors }}"
+          $warnings = "${{ steps.bpa.outputs.warnings }}"
+          $total = "${{ steps.bpa.outputs.total }}"
+          
+          echo "# 📊 BPA Analysis Summary" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "## Results" >> $env:GITHUB_STEP_SUMMARY
+          echo "- **Total Violations**: $total" >> $env:GITHUB_STEP_SUMMARY
+          echo "- **Errors**: $errors" >> $env:GITHUB_STEP_SUMMARY
+          echo "- **Warnings**: $warnings" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "## Configuration" >> $env:GITHUB_STEP_SUMMARY
+          echo "- **Ruleset**: ${{ github.event.inputs.ruleset }}" >> $env:GITHUB_STEP_SUMMARY
+          echo "- **Min Severity**: ${{ github.event.inputs.severity_level }}" >> $env:GITHUB_STEP_SUMMARY
+          echo "" >> $env:GITHUB_STEP_SUMMARY
+          echo "## Next Steps" >> $env:GITHUB_STEP_SUMMARY
+          echo "1. Download the artifacts to view the full report" >> $env:GITHUB_STEP_SUMMARY
+          echo "2. Address critical errors first" >> $env:GITHUB_STEP_SUMMARY
+          echo "3. Gradually improve warnings" >> $env:GITHUB_STEP_SUMMARY
+        shell: pwsh

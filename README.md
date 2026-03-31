@@ -1,8 +1,19 @@
 # Power BI CI/CD Pipeline with GitHub Actions
 
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Oussamabenbella/Power-BI-CI-CD-Pipeline-with-GitHub-Actions/Custom_BPA_Runner.yml?label=Custom%20BPA&style=flat-square)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/Oussamabenbella/Power-BI-CI-CD-Pipeline-with-GitHub-Actions/Standard_BPA_Runner.yml?label=Standard%20BPA&style=flat-square)
+![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+
 This project demonstrates how to build a CI/CD pipeline for Power BI using GitHub Actions and the Best Practice Analyzer (BPA).
 
 Based on the article: [Building your Power BI CI/CD pipeline with GitHub Actions (Part 1)](https://fabricatedinsights.substack.com/p/building-your-power-bi-cicd-pipeline-7f9)
+
+## 🆕 Latest Updates
+
+- ✅ **PR BPA Comments**: Automatic BPA analysis on Pull Requests with detailed comments
+- ✅ **Enhanced BPA Runner**: Configurable workflow with ruleset and severity options
+- ✅ **Weekly Audit**: Automated weekly comprehensive BPA audit
+- ✅ **Performance**: Caching added to all workflows for faster execution
 
 ## 📋 Prerequisites
 
@@ -63,7 +74,7 @@ powerbi-cicd-github/
 ### Standard BPA Runner
 
 This workflow:
-1. Downloads and installs Tabular Editor 2.x
+1. Downloads and installs Tabular Editor 2.x (with caching)
 2. Runs BPA using Microsoft's official ruleset
 3. Saves results to `BPA_output.txt`
 4. Uploads results as an artifact
@@ -73,7 +84,7 @@ This workflow:
 ### Custom BPA Runner
 
 This workflow:
-1. Downloads and installs Tabular Editor 2.x
+1. Downloads and installs Tabular Editor 2.x (with caching)
 2. Runs BPA using the custom ruleset (`BPA_Rule.json`)
 3. Saves results to `BPA_output.txt`
 4. Uploads results as an artifact
@@ -82,6 +93,38 @@ This workflow:
 - Manual (`workflow_dispatch`)
 - Push to `main` branch
 - Pull requests targeting `main` branch
+
+### 🆕 Enhanced BPA Runner
+
+Advanced workflow with configurable options:
+- Choose ruleset: custom / standard / strict
+- Choose minimum severity level: 1 / 2 / 3
+- Detailed summary in GitHub Actions
+- Better error handling
+
+**Trigger:** Manual with options
+
+### 🆕 PR BPA with Comments
+
+Automatically analyzes Pull Requests and posts comments:
+- Runs only when Power BI files are modified
+- Posts detailed summary as PR comment
+- Shows error and warning counts
+- Includes full report in artifacts
+
+**Trigger:** Automatic on Pull Requests to `main`
+
+### 🆕 Weekly BPA Audit
+
+Comprehensive weekly audit:
+- Runs every Monday at 9 AM UTC
+- Uses Microsoft's complete ruleset
+- Categorizes violations by type
+- Keeps 90-day history
+
+**Triggers:**
+- Automatic: Every Monday at 9 AM UTC
+- Manual: Via Actions tab
 
 ## 📝 Custom BPA Rules
 

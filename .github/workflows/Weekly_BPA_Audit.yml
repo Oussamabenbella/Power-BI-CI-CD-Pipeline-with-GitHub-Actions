@@ -1,0 +1,93 @@
+name: Weekly BPA Audit
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Every Monday at 9 AM UTC
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Cache Tabular Editor
+        id: cache-te
+        uses: actions/cache@v3
+        with:
+          path: |
+            TabularEditor.exe
+            *.dll
+          key: tabular-editor-${{ runner.os }}-v2
+      
+      - name: Download Tabular Editor 2.x
+        if: steps.cache-te.outputs.cache-hit != 'true'
+        run: |
+          $url = "https://github.com/TabularEditor/TabularEditor/releases/latest/download/TabularEditor.Portable.zip"
+          $output = "TabularEditor.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath . -Force
+          Write-Host "Tabular Editor downloaded and extracted successfully"
+        shell: pwsh
+      
+      - name: Run Comprehensive BPA Analysis
+        continue-on-error: true
+        run: |
+          $date = Get-Date -Format "yyyy-MM-dd"
+          Write-Host "🔍 Running Weekly Audit - $date"
+          
+          # Run with Microsoft official rules
+          ./TabularEditor.exe "MonProjet.SemanticModel/definition/database.tmdl" -A "https://raw.githubusercontent.com/microsoft/Analysis-Services/master/BestPracticeRules/BPARules.json" `
+          | Tee-Object -FilePath "./audit_$date.txt"
+        shell: pwsh
+      
+      - name: Generate Audit Summary
+        run: |
+          $date = Get-Date -Format "yyyy-MM-dd"
+          $content = Get-Content "./audit_$date.txt" -Raw
+          $violations = ($content | Select-String -Pattern "violates rule" -AllMatches).Matches.Count
+          
+          # Categorize violations
+          $performance = ($content | Select-String -Pattern "\[Performance\]" -AllMatches).Matches.Count
+          $dax = ($content | Select-String -Pattern "\[DAX Expressions\]" -AllMatches).Matches.Count
+          $maintenance = ($content | Select-String -Pattern "\[Maintenance\]" -AllMatches).Matches.Count
+          $formatting = ($content | Select-String -Pattern "\[Formatting\]" -AllMatches).Matches.Count
+          $naming = ($content | Select-String -Pattern "\[Naming Conventions\]" -AllMatches).Matches.Count
+          
+          $summary = @"
+          # 📊 Weekly BPA Audit Report
+          ## Date: $date
+          
+          ### Overview
+          - **Total Violations**: $violations
+          
+          ### By Category
+          - **Performance**: $performance
+          - **DAX Expressions**: $dax
+          - **Maintenance**: $maintenance
+          - **Formatting**: $formatting
+          - **Naming Conventions**: $naming
+          
+          ### Trend Analysis
+          Compare this report with previous weeks to track improvements.
+          
+          ### Recommendations
+          1. Focus on Performance issues first
+          2. Add descriptions to all measures and tables
+          3. Review DAX expressions for best practices
+          4. Standardize naming conventions
+          
+          ---
+          📥 Download the full audit report from artifacts
+          "@ >> $env:GITHUB_STEP_SUMMARY
+        shell: pwsh
+      
+      - name: Upload Audit Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-audit-${{ github.run_number }}
+          path: audit_*.txt
+          retention-days: 90

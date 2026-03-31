@@ -1,0 +1,120 @@
+name: PR BPA with Comments
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**.tmdl'
+      - '**.bim'
+      - '**.pbip'
+      - '**.SemanticModel/**'
+
+jobs:
+  bpa-check:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Cache Tabular Editor
+        id: cache-te
+        uses: actions/cache@v3
+        with:
+          path: |
+            TabularEditor.exe
+            *.dll
+          key: tabular-editor-${{ runner.os }}-v2
+      
+      - name: Download Tabular Editor 2.x
+        if: steps.cache-te.outputs.cache-hit != 'true'
+        run: |
+          $url = "https://github.com/TabularEditor/TabularEditor/releases/latest/download/TabularEditor.Portable.zip"
+          $output = "TabularEditor.zip"
+          Invoke-WebRequest -Uri $url -OutFile $output
+          Expand-Archive -Path $output -DestinationPath . -Force
+          Write-Host "Tabular Editor downloaded and extracted successfully"
+        shell: pwsh
+      
+      - name: Run BPA Analysis
+        id: bpa
+        continue-on-error: true
+        run: |
+          $output = ./TabularEditor.exe "MonProjet.SemanticModel/definition/database.tmdl" -A "./BPA_Rule.json" 2>&1
+          $output | Tee-Object -FilePath "./BPA_output.txt"
+          
+          # Count violations by severity
+          $errors = ($output | Select-String -Pattern "Error:" -AllMatches).Matches.Count
+          $warnings = ($output | Select-String -Pattern "violates rule" -AllMatches).Matches.Count - $errors
+          
+          echo "errors=$errors" >> $env:GITHUB_OUTPUT
+          echo "warnings=$warnings" >> $env:GITHUB_OUTPUT
+          
+          # Exit with 0 to allow comment posting
+          exit 0
+        shell: pwsh
+      
+      - name: Create BPA Summary
+        id: summary
+        run: |
+          $content = Get-Content "./BPA_output.txt" -Raw
+          $errors = '${{ steps.bpa.outputs.errors }}'
+          $warnings = '${{ steps.bpa.outputs.warnings }}'
+          
+          $summary = @"
+          ## 📊 BPA Analysis Results
+          
+          - **Errors**: $errors
+          - **Warnings**: $warnings
+          
+          ### Top Violations
+          
+          ``````
+          $($content -split "`n" | Select-Object -First 30 | Out-String)
+          ``````
+          
+          <details>
+          <summary>View Full Report</summary>
+          
+          ``````
+          $content
+          ``````
+          
+          </details>
+          
+          ---
+          💡 **Tip**: Download the full BPA report from the workflow artifacts.
+          "@
+          
+          # Escape special characters for GitHub Actions
+          $summary = $summary -replace '"', '\"'
+          $summary = $summary -replace "`r`n", "`n"
+          
+          # Save to file for comment
+          $summary | Out-File -FilePath "./bpa_summary.txt" -Encoding UTF8
+        shell: pwsh
+      
+      - name: Comment PR with Results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('./bpa_summary.txt', 'utf8');
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+      
+      - name: Upload BPA Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-bpa-results-${{ github.event.pull_request.number }}
+          path: BPA_output.txt

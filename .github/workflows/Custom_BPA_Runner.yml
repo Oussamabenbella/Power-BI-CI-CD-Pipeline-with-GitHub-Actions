@@ -17,7 +17,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       
+      - name: Cache Tabular Editor
+        id: cache-te
+        uses: actions/cache@v3
+        with:
+          path: |
+            TabularEditor.exe
+            *.dll
+          key: tabular-editor-${{ runner.os }}-v2
+      
       - name: Download Tabular Editor 2.x
+        if: steps.cache-te.outputs.cache-hit != 'true'
         run: |
           $url = "https://github.com/TabularEditor/TabularEditor/releases/latest/download/TabularEditor.Portable.zip"
           $output = "TabularEditor.zip"
