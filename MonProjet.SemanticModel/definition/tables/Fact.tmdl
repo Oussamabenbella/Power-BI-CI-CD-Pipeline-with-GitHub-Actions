@@ -32,6 +32,10 @@ table Fact
 		formatString: 0
 		lineageTag: ec13dffd-ce47-4213-adb3-1c18c1b5b118
 
+	measure 'Partner Count' = COUNTA([Partner ID])
+		formatString: 0
+		lineageTag: 9e59c735-c730-4d41-abd7-657565f605c9
+
 	column EstimatedCloseDate
 		dataType: dateTime
 		formatString: m/d/yyyy
