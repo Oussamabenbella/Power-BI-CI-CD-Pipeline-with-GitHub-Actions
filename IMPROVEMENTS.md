@@ -80,7 +80,7 @@ Ce document liste toutes les améliorations apportées au pipeline CI/CD Power B
 
 ---
 
-### 4. **Caching de Tabular Editor**
+### 3. **Caching de Tabular Editor**
 📄 Fichiers: Tous les workflows
 
 **Fonctionnalité**: Cache de Tabular Editor pour accélérer les workflows
@@ -106,7 +106,6 @@ Ce document liste toutes les améliorations apportées au pipeline CI/CD Power B
 **Après**:
 - Standard BPA Runner (manuel, avec cache)
 - Custom BPA Runner (auto sur push, avec cache)
-- **NOUVEAU**: Enhanced BPA Runner (manuel, configurable)
 - **NOUVEAU**: PR BPA with Comments (auto sur PR)
 - **NOUVEAU**: Weekly BPA Audit (auto hebdomadaire)
 
@@ -116,7 +115,6 @@ Ce document liste toutes les améliorations apportées au pipeline CI/CD Power B
 |----------|-------|-------|------|
 | Standard BPA | ~45s | ~30s | 33% |
 | Custom BPA | ~45s | ~30s | 33% |
-| Enhanced BPA | N/A | ~30s | N/A |
 | PR BPA | N/A | ~35s | N/A |
 | Weekly Audit | N/A | ~40s | N/A |
 
@@ -139,10 +137,9 @@ Ce document liste toutes les améliorations apportées au pipeline CI/CD Power B
 
 ### Validation Pre-Production
 
-1. Lancez **Enhanced BPA Runner**
-2. Choisissez ruleset: **standard**
-3. Choisissez severity: **2** (warnings+)
-4. Vérifiez qu'il n'y a pas de violations critiques
+1. Lancez **Standard BPA Runner**
+2. Vérifiez le rapport complet avec toutes les règles Microsoft
+3. Corrigez les violations critiques avant déploiement
 
 ### Audit de Qualité
 

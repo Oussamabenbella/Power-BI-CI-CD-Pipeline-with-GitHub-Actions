@@ -11,7 +11,6 @@ Based on the article: [Building your Power BI CI/CD pipeline with GitHub Actions
 ## 🆕 Latest Updates
 
 - ✅ **PR BPA Comments**: Automatic BPA analysis on Pull Requests with detailed comments
-- ✅ **Enhanced BPA Runner**: Configurable workflow with ruleset and severity options
 - ✅ **Weekly Audit**: Automated weekly comprehensive BPA audit
 - ✅ **Performance**: Caching added to all workflows for faster execution
 
@@ -93,16 +92,6 @@ This workflow:
 - Manual (`workflow_dispatch`)
 - Push to `main` branch
 - Pull requests targeting `main` branch
-
-### 🆕 Enhanced BPA Runner
-
-Advanced workflow with configurable options:
-- Choose ruleset: custom / standard / strict
-- Choose minimum severity level: 1 / 2 / 3
-- Detailed summary in GitHub Actions
-- Better error handling
-
-**Trigger:** Manual with options
 
 ### 🆕 PR BPA with Comments
 
