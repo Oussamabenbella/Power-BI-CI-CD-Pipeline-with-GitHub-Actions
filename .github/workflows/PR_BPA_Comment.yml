@@ -60,12 +60,15 @@ jobs:
       
       - name: Create BPA Summary
         id: summary
+        if: always()
         run: |
-          $content = Get-Content "./BPA_output.txt" -Raw
-          $errors = '${{ steps.bpa.outputs.errors }}'
-          $warnings = '${{ steps.bpa.outputs.warnings }}'
-          
-          $summary = @"
+          # Check if BPA output file exists
+          if (Test-Path "./BPA_output.txt") {
+            $content = Get-Content "./BPA_output.txt" -Raw
+            $errors = '${{ steps.bpa.outputs.errors }}'
+            $warnings = '${{ steps.bpa.outputs.warnings }}'
+            
+            $summary = @"
           ## 📊 BPA Analysis Results
           
           - **Errors**: $errors
@@ -89,6 +92,22 @@ jobs:
           ---
           💡 **Tip**: Download the full BPA report from the workflow artifacts.
           "@
+          } else {
+            # BPA analysis failed - provide error message
+            $summary = @"
+          ## ⚠️ BPA Analysis Failed
+          
+          The BPA analysis could not complete. This might be due to:
+          - Missing or invalid Power BI project files
+          - Tabular Editor execution error
+          - Invalid BPA ruleset
+          
+          Please check the workflow logs for more details.
+          
+          ---
+          💡 **Tip**: Review the "Run BPA Analysis" step in the workflow logs.
+          "@
+          }
           
           # Escape special characters for GitHub Actions
           $summary = $summary -replace '"', '\"'
@@ -113,8 +132,9 @@ jobs:
             });
       
       - name: Upload BPA Results
-        if: always()
+        if: always() && hashFiles('BPA_output.txt') != ''
         uses: actions/upload-artifact@v4
         with:
           name: pr-bpa-results-${{ github.event.pull_request.number }}
           path: BPA_output.txt
+          if-no-files-found: warn
